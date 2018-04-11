@@ -79,6 +79,11 @@ vector<int> &Derived::calc(void)
 	return vec;
 }
 
+void rval (int&& rvalue)
+{
+	cout<<++rvalue<<endl;
+}
+
 int main (int argc, char* argv[])
 {
 
@@ -98,6 +103,8 @@ int main (int argc, char* argv[])
 		{
 			cout<<j<<endl;
 		}
+
+	rval(10);
 	while (getchar()!='q');
 	return 0;
 }
