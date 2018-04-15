@@ -20,7 +20,8 @@ public:
 	}
 	virtual ~Base()
 	{
-
+		a=0;
+		b=0;
 	}
 private:
 	int a;
@@ -84,6 +85,73 @@ void rval (int&& rvalue)
 	cout<<++rvalue<<endl;
 }
 
+template <typename T>
+class Test: public vector<T>
+{
+public:
+	Test(int size, int value): vector<T>(size, value)
+		{
+			a=0;
+			b=0;
+		}
+	~Test()
+	{
+		a=0;
+		b=0;
+	}
+
+public:
+	template<typename E>
+	Test<T>& operator = (const Test<E>& rhs);
+
+	void push(T item);
+	T& pop();
+public:
+	int a;
+	int b;
+};
+
+template <>
+class Test<float>
+{
+public:
+	Test(float val)
+		{
+			a=val;
+			b=0;
+		}
+public:
+	float a;
+	int b;
+};
+
+template <typename T>
+void Test<T>::push(T item)
+{
+	this->push_back(item);
+}
+
+template <typename T>
+T& Test<T>::pop()
+{
+	return this->back();
+}
+
+template<typename T>
+template<typename E>
+Test<T>& Test<T>::operator =(const Test<E>& rhs)
+{
+	this->clear();
+
+		for (auto iterator=rhs.begin(); iterator!=rhs.end(); iterator++)
+		{
+			this->push(*iterator);
+		}
+	a=rhs.a;
+	b=rhs.b;
+	return (*this);
+}
+
 int main (int argc, char* argv[])
 {
 
@@ -93,7 +161,7 @@ int main (int argc, char* argv[])
 	vector<int> &vec_ref=classtest->calc();
 	cout<<vec_ref[0]<<endl;
 
-	vector<shared_ptr<int>> vec(10, nullptr);
+	vector<shared_ptr<int> > vec(10, nullptr);
 	int k=0;
 		for (auto &i:vec)
 		{
@@ -105,6 +173,23 @@ int main (int argc, char* argv[])
 		}
 
 	rval(10);
+
+	Test<int> test(0, 0);
+	Test<char> test_char(0, 0);
+	Test<float> test_float(1.23);
+	test.push(123);
+	cout<<test.pop()<<endl;
+	cout<<test_float.a<<endl;
+
+	test.push(12);
+	test.push(15);
+
+	test_char.push(122);
+	test_char.push(12);
+
+	test_char=test;
+	cout<<test_char[0]<<endl;
+
 	while (getchar()!='q');
 	return 0;
 }
