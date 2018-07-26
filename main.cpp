@@ -52,7 +52,8 @@ public:
 	}
 	virtual ~Base()
 	{
-
+		a=0;
+		b=0;
 	}
 private:
 	int a;
@@ -210,7 +211,7 @@ int main (int argc, char* argv[])
 	vector<int> &vec_ref=classtest->calc();
 	cout<<vec_ref[0]<<endl;
 
-	vector<shared_ptr<int>> vec(10, nullptr);
+	vector<shared_ptr<int> > vec(10, nullptr);
 	int k=0;
 		for (auto &i:vec)
 		{
