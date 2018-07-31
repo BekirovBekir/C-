@@ -12,8 +12,13 @@
 #include <clocale>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 using namespace std;
+
+mutex mut;
+condition_variable cond_var;
 
 class Thread
 {
@@ -163,9 +168,10 @@ Derived_1::Derived_1 (int a, int b): Derived(a, b), Base1(), a(a), b(b), c(0)
 
 }
 
-void rval (int&& rvalue)
+int&& rval (int&& rvalue)
 {
 	cout<<++rvalue<<endl;
+	return rvalue;
 }
 
 void threadFunction(void)
@@ -180,19 +186,44 @@ int main (int argc, char* argv[])
 	x=1;
 	y=1;
 
-	Thread thr;
-	thr.ThreadRun(x);
+	//Thread thr;
+	//thr.ThreadRun(x);
 
-	/*thread test([x, y](){
+	thread test1([&x, &y](){
 			for (;;)
 			{
-			cout<<"Thread test"<<"x="<<x<<"y="<<y<<endl;
+			cout<<"Thread test1"<<"x="<<x<<" y="<<y<<endl;
 			this_thread::sleep_for(chrono::milliseconds(100));
+			x++;
+				if (x>=10)
+				{
+					cout<<"Thread test1 notify sent"<<endl;
+					lock_guard<std::mutex> lock(mut);
+					cond_var.notify_all();
+					return;
+				}
 			}
 
 	});
 
-	test.join();*/
+	thread test2([&x, &y](){
+			for (;;)
+			{
+
+			unique_lock<std::mutex> lock(mut);
+			while (x<10)
+			{
+				cond_var.wait(lock);
+			}
+			cout<<"Thread test2 received notify"<<endl;
+			this_thread::sleep_for(chrono::milliseconds(100));
+			return;
+			}
+
+	});
+
+	test1.join();
+	test2.join();
 
 	cout<<"x="<<x<<endl;
 
@@ -222,7 +253,8 @@ int main (int argc, char* argv[])
 			cout<<j<<endl;
 		}
 
-	rval(10);
+	cout<<"I'm here!"<<rval(10)<<endl;
+
 
 	Derived* der1= new Derived_1 (5, 5);
 	der1->vec.clear();
