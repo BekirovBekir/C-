@@ -14,11 +14,15 @@
 #include <chrono>
 #include <mutex>
 #include <condition_variable>
+#include <memory>
 
 using namespace std;
 
 mutex mut;
 condition_variable cond_var;
+
+template <typename T>
+using TempUse = vector<vector<T> >;
 
 class Thread
 {
@@ -46,6 +50,38 @@ public:
 				}
 		}
 	}
+};
+
+class TOUT
+{
+private:
+	int c;
+
+public:
+	int a;
+	int b;
+	void func1(int& a)
+	{
+		tin.e=1;
+	}
+
+	//friend class TIN;
+
+	class TIN
+	{
+	private:
+		int d;
+	public:
+		int e;
+
+		 void func2(TOUT& out)
+		 {
+			 out.c=5;
+			 cout<<"Inner class c="<<out.c<<endl;
+		 }
+	};
+
+	TIN tin;
 };
 
 class Base
@@ -116,6 +152,7 @@ public:
 	}
 
 	vector<int> &calc(void) override;
+	long double distance;
 private:
 	int a;
 	int b;
@@ -129,8 +166,14 @@ private:
 		int c=func_b(a);
 		return c;
 	}
+	friend long double operator "" _km(long double km);
 
 };
+
+long double operator "" _km(long double km)
+		{
+			return km*1000.0;
+		}
 
 Derived::Derived (int a, int b): Base(a, b), a(a), b(b)
 {
@@ -168,10 +211,24 @@ Derived_1::Derived_1 (int a, int b): Derived(a, b), Base1(), a(a), b(b), c(0)
 
 }
 
-int&& rval (int&& rvalue)
+template <typename T>
+T& rval (T&& rvalue)
 {
 	cout<<++rvalue<<endl;
 	return rvalue;
+}
+
+unsigned int factorial(unsigned int a)
+{
+	if (a>=1)
+	{
+		return a*factorial(a-1);
+	}
+	if (a==0)
+	{
+	  return 1;
+	}
+
 }
 
 void threadFunction(void)
@@ -182,12 +239,34 @@ void threadFunction(void)
 int main (int argc, char* argv[])
 {
 	int x, y;
+	TempUse<int> vec_template{{1,2}, {1,2}, {3}};
 
 	x=1;
 	y=1;
 
+	int aaa=1;
+
+	if (aaa)
+	{
+		weak_ptr<int> ptr1;
+		weak_ptr<int> ptr2;
+		shared_ptr<int> a (new int (32));
+		shared_ptr<int> b (new int (42));
+
+		ptr1=a;
+
+		ptr2=b;
+		ptr1=ptr2;
+		ptr2=ptr1;
+	}
+
+	TOUT class_out;
+	class_out.tin.func2(class_out);
+
 	//Thread thr;
 	//thr.ThreadRun(x);
+
+	cout<<vec_template[0][1]<<endl;
 
 	thread test1([&x, &y](){
 			for (;;)
@@ -253,7 +332,12 @@ int main (int argc, char* argv[])
 			cout<<j<<endl;
 		}
 
-	cout<<"I'm here!"<<rval(10)<<endl;
+	int r_a=1;
+	float r_b=1.5;
+
+	cout<<"I'm here!"<<rval(std::move(r_a))<<endl;
+
+	cout<<"I'm here!"<<factorial(3)<<endl;
 
 
 	Derived* der1= new Derived_1 (5, 5);
@@ -263,9 +347,26 @@ int main (int argc, char* argv[])
 	Derived_1* der2= new Derived_1 (5, 5);
 	cout<<der2->Base1::func_c(10, 10)<<endl;
 
+
+	Derived der3(6,7);
+	der3.distance=34.0_km;
+	cout<<der3.distance<<endl;
+
+
 	//std::setlocale(LC_ALL, "Russian");
 	//printf("Русский текст\n");
 	cout<<"Русский текст"<<endl;
+
+	vector<vector<int> > vec_massive;//vec_src{1, 2, 3, 4, 5};
+	vector<int> vec_dest{1, 2, 3, 4, 5};
+
+
+	//vec_dest=move(vec_src);
+	//vec_src.push_back(5);
+	vec_massive.push_back(move(vec_dest));
+
+	vec_dest.push_back(5);
+	cout<<vec_dest[1000]<<endl;
 
 	while (getchar()!='q');
 	return 0;
