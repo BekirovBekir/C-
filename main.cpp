@@ -15,6 +15,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <memory>
+#include <initializer_list>
+
 
 using namespace std;
 
@@ -236,6 +238,53 @@ void threadFunction(void)
 
 }
 
+class IList
+{
+public:
+	IList(): ref(a)
+	{
+		a=0;
+		b=0;
+		c=0;
+	}
+
+	IList(const IList& obj): ref(obj.ref)
+	{
+		this->a=obj.a;
+		this->b=obj.b;
+		this->c=obj.c;
+	}
+
+	IList& operator= (const IList& rhs)
+	{
+		if (this!=&rhs)
+		{
+			this->~IList();
+			new (this) IList(rhs);
+		}
+		return *this;
+	}
+
+	IList(initializer_list<int> ls)
+	{
+		auto it=ls.begin();
+
+		a=*it++;
+		b=*it++;
+		c=*it++;
+		ref=*it;
+	}
+
+	int a;
+	int b;
+	//vector<int> v;
+
+	int ref;
+
+private :
+	int c;
+};
+
 int main (int argc, char* argv[])
 {
 	int x, y;
@@ -367,6 +416,12 @@ int main (int argc, char* argv[])
 
 	vec_dest.push_back(5);
 	cout<<vec_dest[1000]<<endl;
+
+
+	IList list{1,2,3,6};
+	//IList list1;
+	//list1=list;
+	cout<<list.a<<" "<<list.b<<endl;
 
 	while (getchar()!='q');
 	return 0;
