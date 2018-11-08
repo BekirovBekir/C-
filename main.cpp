@@ -16,6 +16,7 @@
 #include <condition_variable>
 #include <memory>
 #include <initializer_list>
+#include <unistd.h>
 
 
 using namespace std;
@@ -285,6 +286,25 @@ private :
 	int c;
 };
 
+class ThreadTest
+{
+
+public:
+	ThreadTest(string name): name(name){};
+
+public:
+	void operator() ()
+	{
+		for (;;)
+		{
+			cout<<"Thread is "<<name<<endl;
+			this_thread::sleep_for(chrono::milliseconds(100));
+		}
+	}
+private:
+	string name;
+};
+
 int main (int argc, char* argv[])
 {
 	int x, y;
@@ -422,6 +442,10 @@ int main (int argc, char* argv[])
 	//IList list1;
 	//list1=list;
 	cout<<list.a<<" "<<list.b<<endl;
+
+	ThreadTest thread_test("test1");
+	thread _thread(ref(thread_test));
+	_thread.join();
 
 	while (getchar()!='q');
 	return 0;
