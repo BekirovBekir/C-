@@ -327,6 +327,8 @@ void FSM::State3(void)
 	next_state=&FSM::State1;
 
 }
+
+
 int main (int argc, char* argv[])
 {
 	int x, y;
@@ -484,9 +486,14 @@ int main (int argc, char* argv[])
 
 	FSM fsm(1);
 	//fsm.next_state=&FSM::State1;
+
 		for (;;)
 		{
-			(fsm.*fsm.FSM::next_state)();
+			//(fsm.*fsm.FSM::next_state)();
+			//this_thread::sleep_for(chrono::milliseconds(1000));
+
+			future<void> ftr_fsm_task=async(launch::async, fsm.next_state, &fsm);
+			ftr_fsm_task.get();
 			this_thread::sleep_for(chrono::milliseconds(1000));
 		}
 
