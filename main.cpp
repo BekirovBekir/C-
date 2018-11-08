@@ -16,7 +16,7 @@
 #include <condition_variable>
 #include <memory>
 #include <initializer_list>
-#include <unistd.h>
+#include <future>
 
 
 using namespace std;
@@ -286,24 +286,48 @@ private :
 	int c;
 };
 
-class ThreadTest
+class FSM;
+using Ptr_State=void(FSM::*)(void);
+
+class FSM
 {
-
 public:
-	ThreadTest(string name): name(name){};
 
-public:
-	void operator() ()
-	{
-		for (;;)
-		{
-			cout<<"Thread is "<<name<<endl;
-			this_thread::sleep_for(chrono::milliseconds(100));
-		}
-	}
+	FSM(int state=1): next_state(&FSM::State1), state(state) {};
+
+	void State1(void);
+	void State2(void);
+	void State3(void);
+
+	Ptr_State next_state;
+	//void (FSM::*next_state)(void);
+
 private:
-	string name;
+	int state;
+
 };
+
+void FSM::State1(void)
+{
+	cout<<"State1 is active, next State2"<<endl;
+	next_state=&FSM::State2;
+
+}
+
+void FSM::State2(void)
+{
+	cout<<"State2 is active, next State3"<<endl;
+	next_state=&FSM::State3;
+
+}
+
+void FSM::State3(void)
+{
+	cout<<"State3 is active, next State1"<<endl;
+	next_state=&FSM::State1;
+
+}
+
 
 int main (int argc, char* argv[])
 {
@@ -443,9 +467,36 @@ int main (int argc, char* argv[])
 	//list1=list;
 	cout<<list.a<<" "<<list.b<<endl;
 
-	ThreadTest thread_test("test1");
-	thread _thread(ref(thread_test));
-	_thread.join();
+	future<long> future_test=async(launch::async, []()-> long {
+													long S=0;
+														for (int i=0; i<=10000; i++)
+														{
+														S+=i;
+														}
+													return S;
+													});
+	cout<<"Future result is "<<future_test.get()<<endl;
+
+
+	packaged_task<int()>task( []()-> int {return 1;} );
+	future<int> ftr_task=task.get_future();
+	thread task1(move(task));
+
+	cout<<ftr_task.get()<<endl;
+
+	FSM fsm(1);
+	//fsm.next_state=&FSM::State1;
+
+		for (;;)
+		{
+			//(fsm.*fsm.FSM::next_state)();
+			//this_thread::sleep_for(chrono::milliseconds(1000));
+
+			future<void> ftr_fsm_task=async(launch::async, fsm.next_state, &fsm);
+			ftr_fsm_task.get();
+			this_thread::sleep_for(chrono::milliseconds(1000));
+		}
+
 
 	while (getchar()!='q');
 	return 0;
