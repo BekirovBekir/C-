@@ -475,6 +475,7 @@ int main (int argc, char* argv[])
 														}
 													return S;
 													});
+
 	cout<<"Future result is "<<future_test.get()<<endl;
 
 
