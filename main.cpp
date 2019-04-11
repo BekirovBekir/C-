@@ -27,6 +27,50 @@ condition_variable cond_var;
 template <typename T>
 using TempUse = vector<vector<T> >;
 
+class Super
+{
+private:
+	int pr1;
+	int pr2;
+
+	virtual int f1 (int x)
+	{
+		return 2*x;
+	}
+
+public:
+	int pub1;
+	int pub2;
+
+	virtual int f2 (int x)
+	{
+		return ++x;
+	}
+};
+
+class SubSuper : private Super
+{
+private:
+	int pr1;
+
+public:
+	int pub1;
+
+	virtual ~SubSuper ()
+	{
+		pr1 = 0;
+		pub1 = 0;
+	}
+
+	int f2(int x) override
+	{
+		Super::pub1 = 0;
+		return (x+2);
+	}
+
+};
+
+
 class Thread
 {
 
@@ -328,6 +372,68 @@ void FSM::State3(void)
 
 }
 
+vector<int> rv_test(int a)
+{
+	vector<int> vec;
+
+	vec.push_back(a);
+
+	return vec;
+}
+
+
+class RBase
+{
+public:
+
+	RBase(): rb1(0), ptr_rb1(new int (0))
+	{
+
+	}
+
+	RBase(RBase&& rhs) noexcept
+	{
+		rb1 = rhs.rb1;
+		ptr_rb1 = rhs.ptr_rb1;
+		ptr_rb1 = nullptr;
+	}
+
+	RBase& operator= (RBase&& rhs) noexcept
+	{
+		rb1 = rhs.rb1;
+		ptr_rb1 = rhs.ptr_rb1;
+		return *this;
+	}
+
+	int rb1;
+private:
+	int* ptr_rb1;
+};
+
+class RClass : public RBase
+{
+public:
+	RClass(): rc1(0)
+	{
+
+	}
+
+	RClass(RClass&& rhs) noexcept : RBase(move(rhs))
+	{
+		rc1 = rhs.rc1;
+	}
+
+	RClass& operator= (RClass&& rhs) noexcept
+	{
+		RBase::operator= (move(rhs));
+		rc1 = rhs.rc1;
+
+		return *this;
+	}
+private:
+	int rc1;
+
+};
 
 int main (int argc, char* argv[])
 {
@@ -488,7 +594,7 @@ int main (int argc, char* argv[])
 	FSM fsm(1);
 	//fsm.next_state=&FSM::State1;
 
-		for (;;)
+/*		for (;;)
 		{
 			//(fsm.*fsm.FSM::next_state)();
 			//this_thread::sleep_for(chrono::milliseconds(1000));
@@ -496,8 +602,31 @@ int main (int argc, char* argv[])
 			future<void> ftr_fsm_task=async(launch::async, fsm.next_state, &fsm);
 			ftr_fsm_task.get();
 			this_thread::sleep_for(chrono::milliseconds(1000));
-		}
+		}*/
 
+	#define UNIQUE_PTR 1
+	int* ptr = nullptr;
+		if (UNIQUE_PTR)
+		{
+			unique_ptr<int> s_ptr(new int(12));
+			ptr=s_ptr.get();
+			cout<<"UNIQUE_PTR = "<<*s_ptr<<endl;
+		}
+	cout<<"UNIQUE_PTR = "<<*ptr<<endl;
+
+	SubSuper testsuper;
+	//Super& testsub = testsuper;
+
+	//cout << testsub.f2(1) << endl;
+
+	vector<int> v = rv_test(2);
+	cout << v[0] << endl;
+
+	//RClass rclass1 = move(RClass());
+	RClass rclass1;
+	RClass rclass2;
+
+	rclass2 = move(rclass1);
 
 	while (getchar()!='q');
 	return 0;
