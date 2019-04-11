@@ -402,6 +402,7 @@ public:
 	{
 		rb1 = rhs.rb1;
 		ptr_rb1 = rhs.ptr_rb1;
+		rhs.ptr_rb1 = nullptr;
 		return *this;
 	}
 
