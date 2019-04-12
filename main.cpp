@@ -395,7 +395,7 @@ public:
 	{
 		rb1 = rhs.rb1;
 		ptr_rb1 = rhs.ptr_rb1;
-		ptr_rb1 = nullptr;
+		rhs.ptr_rb1 = nullptr;
 	}
 
 	RBase& operator= (RBase&& rhs) noexcept
@@ -623,11 +623,11 @@ int main (int argc, char* argv[])
 	vector<int> v = rv_test(2);
 	cout << v[0] << endl;
 
-	//RClass rclass1 = move(RClass());
-	RClass rclass1;
-	RClass rclass2;
+	RClass rclass1 = move(RClass());
+	//RClass rclass1;
+	//RClass rclass2;
 
-	rclass2 = move(rclass1);
+	//rclass2 = move(rclass1);
 
 	while (getchar()!='q');
 	return 0;
