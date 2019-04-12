@@ -372,13 +372,13 @@ void FSM::State3(void)
 
 }
 
-vector<int> rv_test(int a)
+vector<int> rv_test(vector<int>&& a)
 {
-	vector<int> vec;
+	vector<int> vec(a.begin(), a.end());
 
-	vec.push_back(a);
+	//vec.push_back(a);
 
-	return vec;
+	return move(vec);
 }
 
 
@@ -620,7 +620,8 @@ int main (int argc, char* argv[])
 
 	//cout << testsub.f2(1) << endl;
 
-	vector<int> v = rv_test(2);
+	vector<int> w(300, 1);
+	vector<int> v = rv_test(move(w));
 	cout << v[0] << endl;
 
 	RClass rclass1 = move(RClass());
