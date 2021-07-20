@@ -17,7 +17,11 @@
 #include <memory>
 #include <initializer_list>
 #include <future>
-
+#include<tuple>
+#include<list>
+#include "Allocator.hpp"
+#include "type_erasure.hpp"
+#include <any>
 
 using namespace std;
 
@@ -436,6 +440,275 @@ private:
 
 };
 
+template<typename... Args>
+void foo(Args... args)
+{
+	std::cout << sizeof...(args) << std::endl;
+}
+
+struct rvalue_test;
+
+struct rvalue_test
+{
+	rvalue_test()
+	{
+		a = 0;
+		b = 0;
+	}
+
+	rvalue_test(const rvalue_test& rhs)
+	{
+		a = rhs.a;
+		b = rhs.b;
+		cout << "Copy constructor" << endl;
+	}
+	rvalue_test(rvalue_test&& rhs) noexcept
+	{
+		a = rhs.a;
+		b = rhs.b;
+		rhs.a = 0;
+		rhs.b = 0;
+		cout << "Move constructor" << endl;
+	}
+	rvalue_test& operator= (const rvalue_test& rhs)
+	{
+		a = rhs.a;
+		b = rhs.b;
+		return *this;
+	}
+
+	rvalue_test& operator= (rvalue_test&& rhs) noexcept
+	{
+		a = rhs.a;
+		b = rhs.b;
+		rhs.a = 0;
+		rhs.b = 0;
+		return *this;
+	}
+
+	int a;
+	int b;
+
+};
+
+int bar_val = 10;
+int bar_val1 = 11;
+int *bar_ptr = &bar_val;
+
+void incr(int& a)
+{
+	a++;
+}
+
+template<typename T>
+void fbar(T&& a)
+{
+	int g;
+	g++;
+
+	//incr(forward<T>(a));
+	a = &bar_val1;
+	//arg--;
+	//*arg = 1;
+}
+
+void RvalueTest(rvalue_test rvalue)
+{
+	rvalue_test a;
+	rvalue.a++;
+	a = rvalue;
+}
+
+void RvalueTest(rvalue_test &&rvalue)
+{
+	rvalue.a++;
+}
+
+class ReplacementTest
+{
+public:
+	int8_t a;
+	int8_t b;
+
+	int& ref;
+
+public:
+	ReplacementTest(int8_t a, int8_t b, int& ref) : a(a), b(b), ref(ref)
+	{
+
+	}
+
+	~ReplacementTest()
+	{
+		a=0;
+		b=0;
+	}
+
+	ReplacementTest(const ReplacementTest& rhs) : ref(rhs.ref)
+	{
+		a = rhs.a;
+		b = rhs.b;
+	}
+
+	ReplacementTest& operator= (const ReplacementTest& rhs)
+	{
+
+		if (this == &rhs)
+		return *this;
+
+		this->~ReplacementTest();
+		new (this) ReplacementTest(rhs);
+		return *this;
+	}
+
+};
+
+class test_ctor
+{
+public:
+	int a;
+	int b;
+
+	test_ctor(): a(0), b(0)
+	{
+		cout<<"Ctor ctor test_ctor!"<<endl;
+	}
+
+	test_ctor(const test_ctor& rhs ): a(rhs.a), b(rhs.b)
+	{
+		cout<<"Copy ctor test_ctor!"<<endl;
+	}
+
+	test_ctor& operator= (const test_ctor& rhs)
+	{
+
+		if (this == &rhs)
+		return *this;
+
+		a = rhs.a;
+		b = rhs.b;
+		return *this;
+	}
+
+	bool operator< (test_ctor const & rhs)
+	{
+		return a < rhs.a;
+	}
+};
+
+class test_struct
+{
+public:
+	test_struct()
+	{
+		cout<<"Ctor test_struct!"<<endl;
+	}
+	struct test
+	{
+		test()
+		{
+			cout<<"Ctor test!"<<endl;
+		}
+
+		test(test_ctor& rhs): tc(rhs)
+		{
+			rhs.a = 1;
+		}
+
+		test_ctor tc;
+	};
+
+	int c;
+	test* ptr;
+	void append(test_ctor& a)
+	{
+		ptr = new struct test(a);
+	}
+};
+
+template<typename... Args>
+void m_print(Args... args)
+{
+
+}
+
+template<typename HEAD, typename... Args>
+void m_print(HEAD head, Args... args)
+{
+	std::cout << head << endl;
+	m_print(args...);
+}
+
+class TemplateTest
+{
+private:
+	uint32_t a = 0;
+public:
+	void Set(uint32_t var)
+	{
+		a =var;
+	}
+
+	template <typename T>
+	void test_print (T var)
+	{
+		cout << var << endl;
+	}
+};
+
+template<typename T>
+class TemplateTest1
+{
+private:
+	T a = 0;
+public:
+	void Set(T var)
+	{
+		a = var;
+	}
+
+	void test_print (T var)
+	{
+		cout << var << endl;
+	}
+};
+
+class mem_fn_class
+{
+public:
+
+	int foo(int param)
+	{
+		return param++;
+
+	};
+
+	int m1;
+};
+
+class thread_test_functor
+{
+public:
+	void operator() (int &a)
+	{
+		a++;
+	}
+
+	thread_test_functor() = default;
+	thread_test_functor(const thread_test_functor &rhs) = default;
+	thread_test_functor &operator= (const thread_test_functor &rhs) = default;
+
+	thread_test_functor(thread_test_functor &&rhs) = default;
+	thread_test_functor &operator= (thread_test_functor &&rhs) = default;
+};
+
+TestAllocator<size_t> alloc_test;
+struct any_struct
+{
+	size_t a;
+	float b;
+};
+
 int main (int argc, char* argv[])
 {
 	int x, y;
@@ -629,6 +902,98 @@ int main (int argc, char* argv[])
 	//RClass rclass2;
 
 	//rclass2 = move(rclass1);
+	int&& t = 5;
+	int f = typename remove_reference<int&&>::type (t);
+	cout << f << endl;
+
+	foo(1,2,3,4,5);
+
+	tuple <char, int, float> geek;
+	geek = make_tuple('a', 1, 2);
+	cout << get<0>(geek) << " " << get<1>(geek) << endl;
+
+	int aa = 10, bb = 0;
+	std::tie(aa, bb) = std::make_tuple(bb, aa);
+	cout << aa << " " << bb << endl;
+
+	const int iii = 7;
+	const int* iii_ptr = &iii;
+	const int& iii_ref = iii;
+	//bar(iii_ref);
+	cout << iii << endl;
+
+	rvalue_test test;
+	test.a = 8;
+	test.b = 8;
+	//rvalue_test& ref = test;
+
+	//bar(move(test));
+
+	int abc1 = 100;
+	int abc2 = 200;
+	ReplacementTest replacement1(1, 1, abc1);
+	ReplacementTest replacement2(2, 2, abc2);
+	replacement2 = replacement1;
+
+	test_ctor ctr;
+
+	test_struct test123456;
+	test123456.append(ctr);
+	std::list<test_ctor> l1;
+	l1.push_back(ctr);
+
+	m_print(1, 2, 3, "Hello!");
+
+	TemplateTest* test_template = new TemplateTest;
+
+	test_template->test_print(34);
+
+	TemplateTest1<int>* test_template1 = new TemplateTest1<int>;
+
+	test_template1->test_print(35);
+
+
+	fbar(bar_ptr);
+
+	mem_fn_class mem_fn_instance;
+
+	auto m = mem_fn(&mem_fn_class::foo);
+	int m1;
+	m1 = m(mem_fn_instance, 5);
+	cout << m1 << endl;
+
+	int abcd = 10;
+	thread_test_functor test_functor;
+	std::thread thread1(test_functor, std::ref(abcd));
+	thread1.join();
+
+	rvalue_test rv_instance;
+	//RvalueTest(rvalue_test());
+
+	size_t alloc_value = 0;
+	size_t *alloc_test_ptr = alloc_test.allocate(10);
+
+
+	for (size_t i = 0; i < 10; ++i) {
+		alloc_test.construct(alloc_test_ptr + i, alloc_value++);
+		std::cout << "Alloc test, num is: " << *(alloc_test_ptr + i) << std::endl;
+	}
+
+	for (size_t i = 0; i < 10; ++i) {
+		alloc_test.destroy(alloc_test_ptr + i);
+	}
+
+	 alloc_test.deallocate(alloc_test_ptr);
+
+	 any_struct any_struct_my;
+	 any_struct_my.a =1;
+	 any_struct_my.b = 1.23;
+	 any_test my_any(any_struct_my);
+	 any_test my_any_1(5.1);
+	 my_any = 9;
+	 any_test my_any_2 = my_any_1;
+
+	 std::any aasa(2);
 
 	while (getchar()!='q');
 	return 0;
