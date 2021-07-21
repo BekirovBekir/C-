@@ -19,25 +19,41 @@ public:
 	template<typename T>
 	any_test(const T &param) : param_ptr(new derived<T>(param))
 	{
+		std::cout << "this value is " << this << std::endl;
 		std::cout << "any_test constructor is invoked" << std::endl;
 	}
 
-	any_test(const any_test &rhs)
+
+//	template<typename T, typename... Args>
+//	any_test(Args&&... args) : param_ptr(new derived<T>(std::forward<T>(args)...))
+//	{
+//		std::cout << "any_test constructor is invoked" << std::endl;
+//	}
+
+	any_test(const any_test &rhs) : param_ptr(rhs.param_ptr->clone())
 	{
-//		param_ptr = new derived<T>(dynamic_cast<derived<T> *>(rhs.param_ptr)->param);
-		new (this) any_test(rhs.param_ptr);
+		std::cout << "this value is " << this << std::endl;
 		std::cout << "any_test copy constructor is invoked" << std::endl;
 	}
 
 	any_test &operator=(const any_test &rhs)
 	{
 		delete param_ptr;
-		new (this) any_test(rhs.param_ptr);
-//		param_ptr = new derived<T>(dynamic_cast<derived<T> *>(rhs.param_ptr)->param);
+		param_ptr = rhs.param_ptr->clone();
 		std::cout << "any_test assign operator is invoked" << std::endl;
 
 		return *this;
 	}
+
+//	template<typename T, typename... Args>
+//	any_test &operator=(Args&&... args)
+//	{
+//		delete param_ptr;
+//		param_ptr = new derived<T>(std::forward<T>(args)...);
+//		std::cout << "any_test param assign operator is invoked" << std::endl;
+//
+//		return *this;
+//	}
 
 	template<typename T>
 	any_test &operator=(const T &param)
@@ -48,10 +64,10 @@ public:
 
 		return *this;
 	}
-
 	~any_test()
 	{
 		delete param_ptr;
+		std::cout << "any_test destructor is invoked" << std::endl;
 	}
 
 private:
@@ -60,6 +76,10 @@ private:
 	{
 	public:
 		virtual ~base() {}
+		virtual base *clone(void)
+		{
+			return this;
+		}
 	};
 
 	template<typename T>
@@ -72,6 +92,10 @@ private:
 		{
 			param = rhs.param;
 			std::cout << "derived copy constructor is invoked" << std::endl;
+		}
+		base *clone(void) override
+		{
+			return new derived<T>(*this);
 		}
 
 		T param;
